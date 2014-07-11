@@ -1,0 +1,200 @@
+#!/usr/bin/python
+import os, re, sys, datetime, threading, optparse, colorama
+basicdir=".msf4/logs/scripts/keylogrecorder"
+green = colorama.Fore.GREEN
+cyan = colorama.Fore.CYAN
+creset = colorama.Fore.RESET
+colors = ( "black", "cyan", "green", "blue", "magenta", "red", "reset", "white", "yellow" )
+class transl:
+ def __init__(self, file = None, utility='no', threading=False ):
+  #intab = "&qwertyuiop[]asdfghjkl;'zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:\"ZXCVBNM<>?"
+  #out = "?йцукенгшщзхъфывапролджэячсмитьбю.ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ,"
+  intab = "&qwertyuiop[]asdfghjkl;'zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:\"ZXCVBNM?"
+  out = "?йцукенгшщзхъфывапролджэячсмитьбю.ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬ,"
+  self.trans = str().maketrans( intab, out)
+  if file == None:
+   self.file = self.fileset( file )
+   if utility == 'yes':
+    self.utility( self.file )
+   for val in self.file:
+    self.objopen( val )
+  else:
+   self.file = file
+   self.objopen( self.file )
+ def fileset( self, file ):
+  try:
+   home = os.environ['HOME']
+  except KeyError:
+   print('Enviroment Variable HOME must be set')
+   sys.exit(1)
+  dir  = os.path.join( home, *basicdir.split('/') )
+  file = [ os.path.join( dir, fname ) for fname in os.listdir( dir ) ] 
+  return file  
+ def utility( self, obj, timedelta=1 ):
+  for i in obj:
+   if os.path.isfile( i ):
+    st = os.stat(i)
+    size = st.st_size  
+    time = datetime.datetime.fromtimestamp( st.st_mtime )
+    try:
+     days=int(timedelta)
+    except ValueError:
+     print("Value {0} not integer use default value 1 day".format( timedelta ) )
+     days=1
+    allowrangetime = datetime.datetime.now() - datetime.timedelta( days=days )  
+    if not size and allowrangetime > time:
+     print( "Delete file {file}".format( file=i ))
+     os.unlink( i )
+ def objopen( self, obj, onlyregex=True ):
+  try:
+   fl = open( obj )
+  except ValueError:
+   print("{0} must be file".format( obj ) )
+   sys.exit(1)
+  lines = ""
+  print("{}{obj}{creset}:".format( green, obj=obj, creset=creset) )
+  for num, f in enumerate(fl, start=1 ):
+   lines += "{cyan}{num}{creset}:{origin}{modify}".format( cyan=cyan, creset=creset, num=num, 
+     origin=f, modify=f.translate( self.trans ) )
+  regex = '<.*>'  
+  val =""
+  if onlyregex:
+   val = re.sub( regex,lambda s: "", lines )
+  else:
+   for v in lines.split('\n'):
+    val+=v
+  print(val)
+class translr(transl):
+ def objopen( self, obj ):
+  regex = ""
+  return super( translr,self).objopen(obj,onlyregex=False)
+def show_file( fl ):
+ if os.path.isfile( fl ):
+  lines = open(fl).readlines()
+ for count,i in enumerate(lines,1):
+  print( "{}{}{}:{}".format( cyan, count, creset, i), end="" )
+def getbool( default='y'):
+ quest_msg = "Do you have continued[{}]:".format( default )
+ while True:
+  try:   
+   line = input( quest_msg )
+   if not line:
+    line = default
+   res = line.strip('\n') 
+   if res == "y" or res == "n":
+    break 
+   print ("Must be 'y' or 'n'")
+  except EOFError:
+   sys.exit(1)
+ return res 
+def main(): 
+ opts, args = parse_options()
+ choice = args
+ operation = { "read": "read",
+               "r":"read",
+               "u":"utility",
+               "utility":"utility",
+               "o":"original",
+               "original":"original",
+               "e":"escpread",
+               "escpread":"escpread",
+               "d":"delete",
+               "delete":"delete",}[opts.operation]
+ #print( operation)
+ if opts.utility == True or operation == "utility":
+  transl.utility( None, transl.fileset( None, None ) )  
+  sys.exit(0)
+ if opts.dialog == True or not len(choice):
+  while True:
+   try:
+    choice = dial_menu( )
+    operation = dial_menu( cont=True )
+    obj = {
+    'read':     transl, 
+    'delete':   os.unlink, 
+    'original': show_file,
+    'escpread': translr
+    }[operation] 
+    a = obj( choice )    
+    exit = getbool()
+    if exit=='n':
+     break   
+   except KeyboardInterrupt:
+    print("Bye  Hacker")
+    sys.exit(0)
+ else:
+  obj = {
+   'read':     transl, 
+   'delete':   os.unlink, 
+   'original': show_file,
+   'escpread': translr
+  }[operation] 
+  if isinstance( choice, ( list, tuple) ):
+   for i in choice: 
+    a = obj( i ) 
+  else:
+   a = obj( choice )    
+
+def dial_menu( cont=False ):
+ files = transl.fileset( None, None )
+ operations = ( "read", "original", "delete", "escpread",  )
+ default = 1
+ if not cont :  
+  print("FileList: ")
+  quest_msg = "Make choice [{}1-{}{}] ( ^d for escape)[{}]:".format( 
+      cyan, len(files), creset, default)  
+  for count,i in enumerate( files, 1):
+   print( "{}{}{}:{}{}{}".format( cyan,
+     count, creset, green, i, creset ))  
+  obj = files 
+ else :
+  js = [ cyan+str(i)+creset+":"+j.capitalize()+" "  for i,j in enumerate(operations,1) ]
+  quest_msg = "Choose operation {}{}{}{}[{default}]:".format(*js, default=default)
+  obj = operations
+ while True:
+  try:
+   line = input( quest_msg  )
+   if not line:
+    line = default    
+   choice = int(line) - 1
+   if choice > len(obj): 
+    print( "index {} out of range".format( choice + 1 ) )   
+    continue   
+   break
+       
+  except ValueError:
+   print( "{} isn't digit".format(line) )
+  except EOFError:
+   sys.exit(1)
+ if not cont:
+   res = files[choice]
+ else:
+   res = operations[choice]  
+ return res 
+      
+def parse_options():
+  #valid_operation=("renew", "r", "delete", "d", "add", "a", "modify", "m", "redelegate", "re")
+  #valid_operations = ( "d", "dialog", "thread", "t"  )
+  valid_operations = ( "d", "delete", "r", "read", "o", "original", "e", "escread", "u", "utility")
+  parser = optparse.OptionParser(usage="usage: %prog [option] [file]", description=
+     "Simple translating files")
+  parser.add_option("-o", "--operation", dest="operation", action="store",
+                  help="operation {0} [default: \"r\" ] ".format(valid_operations),
+                                                        type="choice", choices=valid_operations, default="r")
+  #parser.add_option("-s", "--send", dest="send", action="store_true", default=False,
+  #                                      help="send message for address")
+  #parser.add_option("-S", "--sender", dest="sender", help= " sender mail address [default: hostmaster@example.ua] ",
+  #                      default="hostmaster@example.ua",type=str )
+  #
+  #parser.add_option("-d", "--destination", dest="destination", help= "destination mail address [default: hostmaster@exaple.com] ",
+  #                                            default="hostmaster@exaple.com",type=str )
+  #parser.add_option("-y", "--year", dest="year", default=1, help="for renew how much renew domain name [default: 1 year]", type=int )
+  parser.add_option( "-d", "--dialog", dest="dialog", help="call dialog for selecting and apply file",
+      action="store_true", default=False )
+  parser.add_option( "-u", "--utility", dest="utility", help="utility emptyness files from ~/{}".format( basicdir ),
+      action="store_true", default=False )
+  return parser.parse_args()
+
+if __name__ == '__main__':  
+ #a= transl()  
+ main()
