@@ -13,7 +13,7 @@ from com.sun.star.awt import Selection
 DISC=u"Iсторiя української культури"
 KURS=2
 YEAR=2014
-SURNAME=u"Test "
+SURNAME=u"Геменчук П.Ю."
 DEFFILE=u"test"
 ZBOOK="18.13.0104"
 def setchrproperty( obj, width, height ):
@@ -36,7 +36,8 @@ class actiontext( unohelper.Base, XTextListener ):
    'myedit': 'sfile',
    'myedit1': 'surname',
    'myedit2': 'zbook',
-   'combo': 'kurs'
+   'combo': 'kurs',
+   'edittheme' : 'theme',
   }[self.child]    
   setattr( actionlist, val, actionEvent.Source.Text ) 
 #class comboaction( unohelper.Base, XItemListener ):
@@ -58,10 +59,11 @@ class actionlist( unohelper.Base, XActionListener ):
  year = YEAR
  sfile = DEFFILE
  kurs = KURS
+ theme = ''
  def __init__( self, zbook=ZBOOK, disc=DISC, surname=SURNAME, year=YEAR, sfile=DEFFILE, kurs=KURS, obj=None ):
   pass
  def actionPerformed( self, actionEvent):
-  createhead(  zbook=self.zbook, disc=self.disc, surname=self.surname, year=self.year, sfile=self.sfile, kurs=self.kurs ) 
+  createhead(  zbook=self.zbook, disc=self.disc, surname=self.surname, year=self.year, sfile=self.sfile, kurs=self.kurs, theme=self.theme ) 
   #if self.obj:
   # self.obj.dispose()
 #class comboactionlist( uno
@@ -93,6 +95,10 @@ def cdialog( smgr=None ):
  vect = dm.createInstance( 'com.sun.star.awt.UnoControlFixedTextModel' )
  vect.PositionX, vect.PositionY, vect.Width, vect.Height = 10, 20, 70, 20
  vect.Label, vect.Name = 'Фаил:', 'myvect'
+ theme = dm.createInstance( 'com.sun.star.awt.UnoControlFixedTextModel' )
+ theme.PositionX, theme.PositionY, theme.Width, theme.Height = 10, 30, 70, 20
+ theme.Label, theme.Name = 'Тема:', 'mytheme'
+ 
 
  fio =  dm.createInstance( 'com.sun.star.awt.UnoControlFixedTextModel' )
  fio.PositionX, fio.PositionY, fio.Width, fio.Height = 10, 40, 70, 20
@@ -109,6 +115,11 @@ def cdialog( smgr=None ):
  msgb.PositionX, msgb.PositionY = 50, 20
  msgb.Width, msgb.Height = 90, 10
  msgb.Name, msgb.Text = "myedit", DEFFILE
+
+ msgb3 = dm.createInstance( 'com.sun.star.awt.UnoControlEditModel' )
+ msgb3.PositionX, msgb3.PositionY = 50, 30
+ msgb3.Width, msgb3.Height = 90, 10
+ msgb3.Name, msgb3.Text = "edittheme", ''
  
  msgb1 = dm.createInstance( 'com.sun.star.awt.UnoControlEditModel' )
  msgb1.PositionX, msgb1.PositionY = 50, 40
@@ -137,11 +148,13 @@ def cdialog( smgr=None ):
  dm.insertByName( 'myedit', msgb )
  dm.insertByName( 'myedit1', msgb1 )
  dm.insertByName( 'myedit2', msgb2 )
+ dm.insertByName( 'edittheme', msgb3 )
  dm.insertByName( 'myfio', static_text )
  dm.insertByName( 'vect', vect )
  dm.insertByName( 'mycurs', curs )
  dm.insertByName( 'vectedit', vect_edit )
  dm.insertByName( 'myfio2', fio )
+ dm.insertByName( 'mytheme', theme )
  dm.insertByName( 'myzbook', zbook )
  dm.insertByName( 'combo', combobox )
 
@@ -153,6 +166,7 @@ def cdialog( smgr=None ):
  odial.getControl('myedit1').addTextListener( actiontext(  child='myedit1') )
  odial.getControl('myedit2').addTextListener( actiontext(  child='myedit2') )
  odial.getControl('vectedit').addTextListener( actiontext(  child='vectedit') )
+ odial.getControl('edittheme').addTextListener( actiontext(  child='edittheme') )
  odial.getControl('combo').addTextListener( actiontext( child='combo' ) )
  toolkit = smgr.createInstanceWithContext( "com.sun.star.awt.ExtToolkit", ct)
  #if odial.getControl('vectedit').isEditable:
@@ -166,7 +180,7 @@ def cdialog( smgr=None ):
  odial.getControl('combo').Editable= uno.Bool(1)
  odial.execute()
  odial.dispose()
-def createhead( disc=DISC, surname=SURNAME, kurs=KURS, year=YEAR, zbook=ZBOOK, sfile=DEFFILE ):
+def createhead( disc=DISC, surname=SURNAME, kurs=KURS, year=YEAR, zbook=ZBOOK, sfile=DEFFILE, theme='' ):
  """create header for control work"""
  ct    = uno.getComponentContext()
  smgr  = ct.ServiceManager
@@ -193,10 +207,21 @@ def createhead( disc=DISC, surname=SURNAME, kurs=KURS, year=YEAR, zbook=ZBOOK, s
  tex.insertString( curs, u"з дисципліни", 0 )
  appendcontrolchr( tex, curs, PARAGRAPH_BREAK, 1 )
  setchrproperty( curs, 150 , 16.0 )
- tex.insertString( curs,  "\"%s\"" % disc  , 0 )
- appendcontrolchr( tex, curs, PARAGRAPH_BREAK, 6 )
+ tex.insertString( curs,  "\"%s\"" % disc, 0 )
+ if theme:
+  appendcontrolchr( tex, curs, PARAGRAPH_BREAK, 1 )
+  setchrproperty( curs, 0 , 13.5 )
+  tex.insertString( curs, u"на тему", 0 )
+  #appendcontrolchr( tex, curs, PARAGRAPH_BREAK, 1 )
+  setchrproperty( curs, 150 , 16.0 )
+  appendcontrolchr( tex, curs, PARAGRAPH_BREAK, 1 )
+  tex.insertString( curs, "\"%s\"" % theme, 0 )
+  appendcontrolchr( tex, curs, PARAGRAPH_BREAK, 4 )
+ else: 
+  appendcontrolchr( tex, curs, PARAGRAPH_BREAK, 6 )
  curs.ParaAdjust = LEFT
  setchrproperty( curs, 150 , 13.5 )
+ #if not theme:
  curs.ParaTopMargin = 0
  curs.ParaLeftMargin = 11000
  tex.insertString( curs, u"Виконав:", 0 )
@@ -216,7 +241,9 @@ def createhead( disc=DISC, surname=SURNAME, kurs=KURS, year=YEAR, zbook=ZBOOK, s
  tex.insertString( curs, u"Група № 1", 0 )
  appendcontrolchr( tex, curs, PARAGRAPH_BREAK, 2 )
  setchrproperty( curs, 150 , 13.5 )
+
  curs.ParaTopMargin = 400
+
  tex.insertString( curs, u"Перевірив:", 0 )
  appendcontrolchr( tex, curs, PARAGRAPH_BREAK, 1 )
  setchrproperty( curs, 0 , 13.5 )
