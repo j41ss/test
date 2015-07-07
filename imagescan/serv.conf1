@@ -1,0 +1,24 @@
+#/*end of job directory*/
+#prefix contain path to directory for snapshots
+#template contain path to templates for scan image
+#user contain username for http-authentification 
+#host contain ip or username dlink camera
+#pwd contain password for http-authentification
+#delay contain how many seconds application sleep between query for ipcam
+#number_dir contain path for chunks of snap when scanning
+#repeat_dir contain path for repeat numbers
+#report_file contain path of file for to reporting 
+prefix=/home/guileone/shot/
+user=admin
+host=194.114.136.133
+#host=192.168.1.104
+#pwd=ElanCam
+#host=192.168.0.246
+#pwd=admin
+pwd=elancam
+delay=2
+number_dir=/home/guileone/numbers/%s.jpg
+repeat_dir=/home/guileone/numbers/%s(%d).jpg
+report_file=/home/guileone/report.html
+template=/home/guileone/workdir/image-scan/Templates/
+
