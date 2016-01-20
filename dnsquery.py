@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-
+#for name deligate service who work through email
 import os, optparse, pywhois
 import collections, sys
 import datetime, smtplib

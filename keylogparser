@@ -1,4 +1,5 @@
 #!/usr/bin/python
+#parse keylogrecorder entropy
 import os, re, sys, datetime, threading, optparse, colorama
 basicdir=".msf4/logs/scripts/keylogrecorder"
 green = colorama.Fore.GREEN

@@ -13,7 +13,7 @@ from com.sun.star.awt import Selection
 DISC=u"Iсторiя української культури"
 KURS=2
 YEAR=2014
-SURNAME=u"Геменчук П.Ю."
+SURNAME=u"Twinker"
 DEFFILE=u"test"
 ZBOOK="18.13.0104"
 def setchrproperty( obj, width, height ):
